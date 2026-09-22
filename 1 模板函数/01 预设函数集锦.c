@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
-#include <stdlib.h>// qsort，malloc
+#include <stdlib.h>// qsort、malloc
 #include <time.h>
 //#include <windows.h>//（windows特有库）sleep函数等（含max、min）
 //#include <conio.h>//（windows特有库）getch函数等
@@ -13,7 +13,7 @@
 
 
 // 需要用到的结构体
-// 几何计算-点
+// 几何计算-点（暂无函数调用）
 typedef struct Point {
 	double x, y, z;
 } intpoint;
@@ -35,6 +35,7 @@ void deASCLL(char* s, long long n);										// 字符串数字去ASCII编码（
 int kmp(char *s, char *p);												// kmp字符串匹配函数
 void basic_kmp_getNext(char *p, int next[], int m);						// （basic）kmp函数辅助函数
 void string_wash(char *s, int option);									// 字符串清洗
+char** string_getwords(char *s, int *out_count);						// 字符串单词提取
 
 // 3.几何计算
 double distance_3d(intpoint a, intpoint b);								// 三维空间两点距离计算
@@ -52,12 +53,9 @@ char* jinzhi_to_any(long long in, int base);							// 10进制（整数）转2~3
 char* infix_to_postfix(char *s);										// 算术（中缀）表达式->后缀表达式（含括号、^）
 double count_postfix(char *s);											// 后缀表达式计算
 
-
-
 // 6.其他
 int day_to_week(int y, int m, int d);									// 给定日期计算星期几（y年m月d日）（兼容1582.10.4及以前）
 int next_permutation(int *a, int n);									// 全排列函数（O(n × n!)）
-
 
 
 
@@ -240,7 +238,7 @@ void basic_kmp_getNext(char *p, int next[], int m) {// 模式串，next数组，
 /* 字符串清洗
    
    函数行为约定：去除首位空格及内部“多余空格”
-   option：0：保留词间空格 1：去除所有空格
+   option：0：保留词间单个空格 1：去除所有空格
 */
 void string_wash(char *s, int option) {
 	int len = strlen(s);
@@ -290,6 +288,82 @@ void string_wash(char *s, int option) {
 		s[--tail] = '\0';
 	}
 	return;
+}
+
+/* 字符串单词提取
+   返回值：
+   		char* 数组：依次指向所有独立分配空间的单词字符串，最后一个为 NULL
+   		字符个数：写入给定的 int* 地址
+   
+   函数行为约定：按顺序提取所有非空白字符；需提前定义一个 int* 参数，传入函数中
+*/
+#define IS_SPACE(c) isspace((unsigned char)(c))
+char** string_getwords(char *s, int *out_count) {
+	if (s == NULL || out_count == NULL) return NULL;
+	int len = strlen(s);
+	*out_count = 0;
+	
+	// 第一次遍历：完成字符串清洗，统计单词数量
+	int count = 0;  // 单词计数
+	char *t = (char*)malloc(len+1);
+	int i = 0, j = 0;
+	while(IS_SPACE(s[i])) i++;  // 跳过前导空格
+	for(; i<len; i++) {
+		if(j == 0) {
+			t[j++] = s[i];
+			if(IS_SPACE(s[i+1]) || s[i+1] == '\0') {  // s[i] 为本单词最后一字
+				count++;
+			}
+			continue;
+		}
+		// 此时j>=1
+		if(IS_SPACE(s[i])) {
+			if(IS_SPACE(t[j-1])) {  // 处理连续空格
+				continue;
+			}
+			t[j++] = s[i];
+			continue;
+		}
+		t[j++] = s[i];
+		if(IS_SPACE(s[i+1]) || s[i+1] == '\0') {  // s[i] 为本单词最后一字
+			count++;
+		}
+	}
+	t[j] = '\0';  // 收尾
+	int tail = strlen(t);
+	while (tail > 0 && IS_SPACE(t[tail - 1])) {  // 删除末尾空格
+		t[--tail] = '\0';
+	}
+	
+	len = tail;
+	// 第二次遍历：字符串拆分
+	char **out = (char**)malloc(sizeof(char*) * (count + 1));
+	int len_temp = 0;  // 实时计算当前单词的长度
+	char *temp = (char*)malloc(len + 1);  // 临时存放拆出来的每个单词
+	int p = 0;  // 实时记录下一个单词应该放在 out 的第几行
+	j = 0;  // 用于写入 temp
+	i = 0;
+	while(p < count) {  // 利用 t 的末尾'\0'让最后一个单词收尾
+		if(!IS_SPACE(t[i]) && t[i] != '\0') {
+			temp[j++] = t[i];
+			len_temp++;
+		} else {
+			temp[j] = '\0';
+			char *add = (char*)malloc(len_temp + 1);
+			strcpy(add, temp);
+			out[p++] = add;
+			// 初始化
+			len_temp = 0;
+			j = 0;
+		}
+		i++;
+	}
+	out[p] = NULL;
+	
+	free(t);
+	free(temp);
+	*out_count = count;
+	return out;
 }
 
 
@@ -509,8 +583,6 @@ int next_permutation(int *a, int n) {// 数组，n个数
     }
     return 1;
 }
-
-
 
 
 
@@ -1072,21 +1144,10 @@ char* long_operation(char *a, char *b, int option) {
 
 
 
+
 //以下为测试区~！！！！！！！！！！！！！！！！！！！！！！！！//
 int main() {
 	
-	char s[100], s1[100];
-	int t;
-	while(gets(s)!=NULL) {
-		gets(s1);
-		scanf("%d", &t);
-		getchar();
-		char *out = long_operation(s, s1, t);
-		puts(out);
-	}
-	return 0;
+	
 }
-
-
-
 
