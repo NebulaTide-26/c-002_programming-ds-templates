@@ -1,4 +1,4 @@
-### c-002_programming-and-data-structures —— C 语言程序设计基础 & 数据结构模板库
+### c-002_programming-ds-templates —— C 语言程序设计基础 & 数据结构模板库
 
 ##### 包括：
 1. 通用的 C 语言板子（对标 buaa 传源大一“程序设计基础”课程）
@@ -15,4 +15,4 @@
 并填写
 "-fexec-charset=GBK"（去掉引号）
 4. 版本信息参见 markdown 文件 CHANGELOG。
-5. 有任何建议 or 疑问欢迎访问 https://github.com/NebulaTide-26/c-002_programming-and-data-structures/discussions 提出修改建议，作者将不定期查看 \^\-\^。
+5. 有任何建议 or 疑问欢迎访问 https://github.com/NebulaTide-26/c-002_programming-ds-templates/discussions 提出修改建议，作者将不定期查看 \^\-\^。
