@@ -3,9 +3,8 @@
 #include <string.h>
 #include <stdlib.h>// qsort、malloc
 #include <time.h>
-//#include <windows.h>//（windows特有库）sleep函数等（含max、min）
-//#include <conio.h>//（windows特有库）getch函数等
 #include <errno.h>// 检查strtol转换溢出问题→"errno"
+#include <ctype.h>
 
 #define eps 1e-8
 #define array_len(x) (sizeof(x)/sizeof(x[0]))//计算数组长度
@@ -13,7 +12,7 @@
 
 
 // 需要用到的结构体
-// 几何计算-点（暂无函数调用）
+// 几何计算-点
 typedef struct Point {
 	double x, y, z;
 } intpoint;
@@ -31,7 +30,6 @@ int sushu(long long x);													// 判断某数是否为素数
 // 2.字符串相关
 void a_to_A(char* s);													// 大小写转换-小写to大写
 void A_to_a(char* s);													// 大小写转换-大写to小写
-void deASCLL(char* s, long long n);										// 字符串数字去ASCII编码（其余不变）
 int kmp(char *s, char *p);												// kmp字符串匹配函数
 void basic_kmp_getNext(char *p, int next[], int m);						// （basic）kmp函数辅助函数
 void string_wash(char *s, int option);									// 字符串清洗
@@ -52,6 +50,7 @@ char* jinzhi_to_any(long long in, int base);							// 10进制（整数）转2~3
 // 5.特殊算术计算
 char* infix_to_postfix(char *s);										// 算术（中缀）表达式->后缀表达式（含括号、^）
 double count_postfix(char *s);											// 后缀表达式计算
+char* long_operation(char *a, char *b, int option);						// 超长整数域运算（+ - *；option：1=加，2=减，3=乘）
 
 // 6.其他
 int day_to_week(int y, int m, int d);									// 给定日期计算星期几（y年m月d日）（兼容1582.10.4及以前）
@@ -165,17 +164,6 @@ void A_to_a(char* s) {
 			s[i]+=('a'-'A');
 	}
 	return;
-}
-
-/* 字符串数字去ASCII编码（其余不变）
-   
-   注：可能导致数组末尾识别错误！！！！！
-*/
-void deASCLL(char* s, long long n) {// n=strlen(s)
-	for(int i=0; i<=n-1; i++) {
-		if(s[i]>='0'&&s[i]<='9')
-			s[i]-='0';
-	}
 }
 
 /* 低时间复杂度字符串匹配（kmp及其辅助函数basic_kmp_getNext）
@@ -294,8 +282,8 @@ void string_wash(char *s, int option) {
    返回值：
    		char* 数组：依次指向所有独立分配空间的单词字符串，最后一个为 NULL
    		字符个数：写入给定的 int* 地址
-   
-   函数行为约定：按顺序提取所有非空白字符；需提前定义一个 int* 参数，传入函数中
+	
+   函数行为约定：按顺序提取所有非空白字符；需提前定义一个 int* 变量，传入函数中
 */
 #define IS_SPACE(c) isspace((unsigned char)(c))
 char** string_getwords(char *s, int *out_count) {
@@ -382,12 +370,12 @@ double fcos_3jiao(double d12, double d23, double d13) {
 }
 
 /* 给出n边形顶点坐标，计算面积
-   返回值：面积（错误返回-1.0）
+   返回值：面积（错误返回 -1.0）
    
-   函数行为约定：传入的点z分量为0（不用z）
+   函数行为约定：传入的点的 z 分量为 0（二维平面不用 z）
 */
-double shoelace_area(intpoint *p, int n) {// n：边数，于points数组项数对应
-    if (n < 3) return 0.0;// 不是多边形
+double shoelace_area(intpoint *p, int n) {  // n：边数，于points数组项数对应
+    if (n < 3) return -1.0;  // 不是多边形
 	
     double s = 0.0;
     for (int i = 0; i < n; i++) {
@@ -539,49 +527,6 @@ char* jinzhi_to_any(long long in, int base) {// 被转换数字，目标进制
     // 复制结果到输出缓冲区
     strcpy(s, &temp[p]);// 此时p恰位于缓冲区temp的首个有效位置
     return s;
-}
-
-
-
-// 6.其他
-/* 给定日期计算星期几（y年m月d日）（兼容1582.10.4及以前）
-   返回值：星期几（1~7）
-*/
-int day_to_week(int y, int m, int d) {
-	int w, c, t = -1;
-	if(y<=1582 && m<=10 && d<=4) t = 2;// 对1582.10.4及以前的特殊处理
-	
-	if(m < 3) {
-		y--;
-		m+=12;
-	}
-	c = y / 100;
-	y %= 100;
-	w = (c/4 - 2*c + y + y/4 + 26*(m+1)/10 + d + t) % 7;
-	if(w <= 0) w += 7;
-	return w;
-}
-
-/* 全排列函数（O(n × n!)）
-   返回值：1（已经全为倒序时返回-1）
-   
-   使用方法：
-   do {
-	
-   } while (next_permutation(a, n));
-*/
-int next_permutation(int *a, int n) {// 数组，n个数
-    int i = n - 2;
-    while (i >= 0 && a[i] >= a[i + 1]) i--;// i为第一个s.t. a[i]<a[i+1] 的角标
-    if (i < 0) return 0;// 判断是否为全倒序→结束
-    
-    int j = n - 1;
-    while (a[j] <= a[i]) j--;// i为第一个s.t. a[j]>a[i] 的角标
-    int tmp = a[i]; a[i] = a[j]; a[j] = tmp;// 交换ai、aj
-    for (int l = i + 1, r = n - 1; l < r; l++, r--) {// 将i+1~n部分倒序
-        tmp = a[l]; a[l] = a[r]; a[r] = tmp;
-    }
-    return 1;
 }
 
 
@@ -844,12 +789,16 @@ double count_postfix(char *s) {
 	return out;
 }
 
-/* 超长整数域运算（+-*÷）
-   返回值：运算结果数组
+/* 超长整数域运算（+-*）
+   返回值：运算结果数组（非法 option 返回 NULL）
    
-   option：1 2 3 4对应+ - * ÷
+   option：1 2 3 对应 + - *
 */
 char* long_operation(char *a, char *b, int option) {
+	if(option < 1 || option > 3) {
+		printf("Invalid operation option.\n");
+		return NULL;
+	}
 	// 处理自带符号问题
 	int sign = 0;
 	char *t0, *out;
@@ -866,10 +815,6 @@ char* long_operation(char *a, char *b, int option) {
 			}
 			case 3:{
 				return long_operation(a+1, b+1, 3);
-				break;
-			}
-			case 4:{
-				return long_operation(a+1, b+1, 4);
 				break;
 			}
 		}
@@ -889,11 +834,6 @@ char* long_operation(char *a, char *b, int option) {
 				t0 = long_operation(a+1, b, 3);
 				break;
 			}
-			case 4:{
-				sign = 1;
-				t0 = long_operation(a+1, b, 4);
-				break;
-			}
 		}
 	} else if(b[0]=='-') {
 		switch(option) {
@@ -908,11 +848,6 @@ char* long_operation(char *a, char *b, int option) {
 			case 3:{
 				sign = 1;
 				t0 = long_operation(a, b+1, 3);
-				break;
-			}
-			case 4:{
-				sign = 1;
-				t0 = long_operation(a, b+1, 4);
 				break;
 			}
 		}
@@ -1111,25 +1046,6 @@ char* long_operation(char *a, char *b, int option) {
 			free(z);
 			break;
 		}
-		case 4:{// ÷
-			if(y[0] == 0) {
-				printf("0 cannot be a divisor.\n");
-				free(x);
-				free(y);
-				return NULL;
-			}
-			int *z = (int*)malloc(sizeof(int)*(len1 + 2));
-			len3 = len1 + 1;
-			for(int i = 0; i < len3; i++) {
-				z[i] = 0;// z数组归0
-			}
-			
-			// （待完善）
-			
-			
-			
-			break;
-		}
 	}
 	free(x);
 	free(y);
@@ -1140,6 +1056,48 @@ char* long_operation(char *a, char *b, int option) {
 	return out;
 }
 
+
+
+// 6.其他
+/* 给定日期计算星期几（y年m月d日）（兼容1582.10.4及以前）
+   返回值：星期几（1~7）
+*/
+int day_to_week(int y, int m, int d) {
+	int w, c, t = -1;
+	if(y<=1582 && m<=10 && d<=4) t = 2;// 对1582.10.4及以前的特殊处理
+	
+	if(m < 3) {
+		y--;
+		m+=12;
+	}
+	c = y / 100;
+	y %= 100;
+	w = (c/4 - 2*c + y + y/4 + 26*(m+1)/10 + d + t) % 7;
+	if(w <= 0) w += 7;
+	return w;
+}
+
+/* 全排列函数（O(n × n!)）
+   返回值：1（已经全为倒序时返回-1）
+   
+   使用方法：
+   do {
+	
+   } while (next_permutation(a, n));
+*/
+int next_permutation(int *a, int n) {// 数组，n个数
+    int i = n - 2;
+    while (i >= 0 && a[i] >= a[i + 1]) i--;// i为第一个s.t. a[i]<a[i+1] 的角标
+    if (i < 0) return 0;// 判断是否为全倒序→结束
+    
+    int j = n - 1;
+    while (a[j] <= a[i]) j--;// i为第一个s.t. a[j]>a[i] 的角标
+    int tmp = a[i]; a[i] = a[j]; a[j] = tmp;// 交换ai、aj
+    for (int l = i + 1, r = n - 1; l < r; l++, r--) {// 将i+1~n部分倒序
+        tmp = a[l]; a[l] = a[r]; a[r] = tmp;
+    }
+    return 1;
+}
 
 
 

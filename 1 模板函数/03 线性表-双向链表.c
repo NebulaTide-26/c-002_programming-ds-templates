@@ -625,12 +625,12 @@ static int dlink_basic_fillnode(node *q) {
 /* 依照某成员值对链表节点排序
    返回值：链表信息结构体指针（失败返回NULL）
 */
-intdlink* dlink_sort(intdlink* list) {
-	// 待完善............（思路：归并排序）
+// intdlink* dlink_sort(intdlink* list) {
+// 	// 待完善............（思路：归并排序）
 	
 	
-	return list;
-}
+// 	return list;
+// }
 
 
 
